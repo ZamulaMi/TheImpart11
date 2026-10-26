@@ -230,7 +230,7 @@ export function toValidIso8601(dateInput?: string | null): string | undefined {
   if (isNaN(parsed.getTime()) || parsed.getTime() <= 0) {
     return undefined;
   }
-  return parsed.toISOString();
+  return parsed.toISOString().replace(/\.\d{3}Z$/, 'Z');
 }
 
 /**

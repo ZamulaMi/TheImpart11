@@ -465,17 +465,17 @@ export function collectSitemapEntries(source: SitemapSourceData): SitemapUrlEntr
     if (!isValidCategorySlug(cat?.slug)) continue;
     const slug = cat.slug.trim();
     const matchingArticles = publishedArticles.filter((a) => matchesNavCategory(a, cat));
-    const catLastmod = getLatestIsoTimestamp(matchingArticles.map(getReliableArticleLastmod));
+    const catLastmod = getLatestIsoTimestamp(matchingArticles.map(getReliableArticleLastmod)) || latestSiteLastmod;
     addEntry(`${SITE_DOMAIN}/${encodeURIComponent(slug)}`, catLastmod);
   }
 
   // 4. Публічний розділ популярних матеріалів (/popular)
-  const latestArticlesOnlyLastmod = getLatestIsoTimestamp(allArticleLastmods);
+  const latestArticlesOnlyLastmod = getLatestIsoTimestamp(allArticleLastmods) || latestSiteLastmod;
   addEntry(`${SITE_DOMAIN}/popular`, latestArticlesOnlyLastmod);
 
   // 5. Важливі статичні сторінки видання (/about, /contacts)
-  addEntry(`${SITE_DOMAIN}/about`, source.pagesUpdatedAt?.about);
-  addEntry(`${SITE_DOMAIN}/contacts`, source.pagesUpdatedAt?.contacts);
+  addEntry(`${SITE_DOMAIN}/about`, source.pagesUpdatedAt?.about || latestSiteLastmod);
+  addEntry(`${SITE_DOMAIN}/contacts`, source.pagesUpdatedAt?.contacts || latestSiteLastmod);
 
   // 6. Опубліковані статті (/article/:id)
   for (const article of publishedArticles) {
