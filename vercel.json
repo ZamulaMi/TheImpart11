@@ -93,10 +93,6 @@
   ],
   "rewrites": [
     {
-      "source": "/robots.txt",
-      "destination": "/api/robots"
-    },
-    {
       "source": "/sitemap.xml",
       "destination": "/api/sitemap"
     },
@@ -131,6 +127,30 @@
     {
       "source": "/api/articles/:path*",
       "destination": "/api/articles"
+    },
+    {
+      "source": "/api/categories/:path*",
+      "destination": "/api/settings?__endpoint=categories"
+    },
+    {
+      "source": "/api/categories",
+      "destination": "/api/settings?__endpoint=categories"
+    },
+    {
+      "source": "/api/taxonomies/:path*",
+      "destination": "/api/settings?__endpoint=taxonomies"
+    },
+    {
+      "source": "/api/taxonomies",
+      "destination": "/api/settings?__endpoint=taxonomies"
+    },
+    {
+      "source": "/api/pages/:path*",
+      "destination": "/api/settings?__endpoint=pages"
+    },
+    {
+      "source": "/api/pages",
+      "destination": "/api/settings?__endpoint=pages"
     },
     {
       "source": "/api/settings/:path*",

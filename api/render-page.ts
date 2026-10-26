@@ -3,7 +3,7 @@ import path from 'path';
 import { initResponseHelpers } from './_helpers.ts';
 import { BUILT_HTML_SHELL } from './_built_shell.ts';
 import articleImageHandler from './_article_image.ts';
-import robotsHandler from './robots.ts';
+import { ROBOTS_TXT_BODY } from './_robots_txt.ts';
 import sitemapHandler, {
   fetchSitemapSourceData,
   SitemapDatabaseError,
@@ -15,8 +15,7 @@ import {
   getSitemapCacheVersion,
 } from './_sitemap_cache.ts';
 import { sanitizePublicArticle } from './articles.ts';
-import { getSocialLinks } from './settings.ts';
-import { getTaxonomies } from './taxonomies.ts';
+import { getSocialLinks, getTaxonomies } from './settings.ts';
 import { getTotalViews, ensureStatsLoaded } from './stats.ts';
 import type {
   Article,
@@ -1279,7 +1278,10 @@ export default async function handler(req: any, res: any) {
     req?.query?.pathname === '/robots.txt' ||
     req?.query?.pathname === 'robots.txt'
   ) {
-    return robotsHandler(req, res);
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400');
+    if (req.method === 'HEAD') return res.status(200).end();
+    return res.status(200).send(ROBOTS_TXT_BODY);
   }
 
   // Захист від випадкового потрапляння sitemap.xml до HTML-рендерера

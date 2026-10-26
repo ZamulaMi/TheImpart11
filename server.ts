@@ -8,16 +8,16 @@ import articlesHandler, { getArticles, sanitizePublicArticle } from './api/artic
 import settingsHandler, { getSocialLinks } from './api/settings';
 import authHandler, { extractToken, verifyAdminToken } from './api/auth';
 import draftsHandler, { getDrafts } from './api/drafts';
-import pagesHandler, { getPages } from './api/pages';
-import taxonomiesHandler, { getTaxonomies } from './api/taxonomies';
-import categoriesHandler, { getNavCategories } from './api/categories';
+import pagesHandler, { getPages } from './api/_pages';
+import taxonomiesHandler, { getTaxonomies } from './api/_taxonomies';
+import categoriesHandler, { getNavCategories } from './api/_categories';
 import statsHandler, { ensureStatsLoaded } from './api/stats';
 import { verifyEditorOrAdminToken } from './api/_auth_utils';
 import articleImageHandler from './api/_article_image';
 import renderPageHandler, { generatePageResponse } from './api/render-page';
 import sitemapHandler from './api/sitemap';
 import newsSitemapHandler from './api/news-sitemap';
-import robotsHandler from './api/robots';
+import { ROBOTS_TXT_BODY } from './api/_robots_txt';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -66,9 +66,11 @@ app.get(['/favicon.svg', '/favicon.ico'], (_req, res) => {
   res.status(404).end();
 });
 
-// Обслуговування robots.txt та /api/robots
-app.all(['/robots.txt', '/api/robots'], (req, res) => {
-  return robotsHandler(req, res);
+// Обслуговування robots.txt
+app.all(['/robots.txt'], (_req, res) => {
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400');
+  return res.status(200).send(ROBOTS_TXT_BODY);
 });
 
 // Динамічна генерація sitemap.xml (та секцій sitemap-N.xml при перевищенні лімітів одного файлу)

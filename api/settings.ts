@@ -4,6 +4,18 @@ import { getNeonSql, safeExecuteSql } from './_db.ts';
 import { verifyAdminToken, extractToken } from './_auth_utils.ts';
 import { initResponseHelpers, parseRequestBody } from './_helpers.ts';
 import { invalidateSitemapCache } from './_sitemap_cache.ts';
+import categoriesHandler, { getNavCategories, saveNavCategories } from './_categories.ts';
+import taxonomiesHandler, { getTaxonomies, saveTaxonomies } from './_taxonomies.ts';
+import pagesHandler, { getPages, savePages } from './_pages.ts';
+
+export {
+  getNavCategories,
+  saveNavCategories,
+  getTaxonomies,
+  saveTaxonomies,
+  getPages,
+  savePages,
+};
 
 export interface SocialLinksSet {
   telegram?: string;
@@ -203,6 +215,19 @@ export default async function handler(req: any, res: any) {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
   res.setHeader('Content-Type', 'application/json');
+
+  const rawUrl = typeof req?.url === 'string' ? req.url : '';
+  const endpoint = String(req?.query?.__endpoint || '').toLowerCase();
+
+  if (endpoint === 'categories' || /\/api\/categories\b/i.test(rawUrl)) {
+    return categoriesHandler(req, res);
+  }
+  if (endpoint === 'taxonomies' || /\/api\/taxonomies\b/i.test(rawUrl)) {
+    return taxonomiesHandler(req, res);
+  }
+  if (endpoint === 'pages' || /\/api\/pages\b/i.test(rawUrl)) {
+    return pagesHandler(req, res);
+  }
 
   try {
     if (req.method === 'OPTIONS') {
