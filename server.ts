@@ -17,6 +17,7 @@ import articleImageHandler from './api/_article_image';
 import renderPageHandler, { generatePageResponse } from './api/render-page';
 import sitemapHandler from './api/sitemap';
 import newsSitemapHandler from './api/news-sitemap';
+import robotsHandler from './api/robots';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -65,16 +66,9 @@ app.get(['/favicon.svg', '/favicon.ico'], (_req, res) => {
   res.status(404).end();
 });
 
-// Обслуговування robots.txt
-app.get('/robots.txt', (_req, res) => {
-  const filePath = path.join(__dirname, 'public', 'robots.txt');
-  if (fs.existsSync(filePath)) {
-    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    res.setHeader('Cache-Control', 'public, max-age=86400');
-    return res.sendFile(filePath);
-  }
-  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-  return res.send("User-agent: *\nAllow: /\n\nDisallow: /admin\nDisallow: /admin/\nDisallow: /editor\nDisallow: /editor/\nDisallow: /login\nDisallow: /login/\nDisallow: /api/\n\nSitemap: https://www.theimpart.com/sitemap.xml\nSitemap: https://www.theimpart.com/news-sitemap.xml\n");
+// Обслуговування robots.txt та /api/robots
+app.all(['/robots.txt', '/api/robots'], (req, res) => {
+  return robotsHandler(req, res);
 });
 
 // Динамічна генерація sitemap.xml (та секцій sitemap-N.xml при перевищенні лімітів одного файлу)

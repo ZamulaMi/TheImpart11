@@ -273,18 +273,13 @@ export async function fetchArticlesStrict(): Promise<Article[]> {
         publishedEn: r.publishedEn === true || String(r.publishedEn) === 'true' || r.publishedEn === 1,
       }));
     } catch (err: any) {
-      // Якщо таблиця ще не створена у щойно розгорнутій БД (код PostgreSQL 42P01) — це порожня таблиця, а не збій з'єднання
-      const pgCode = err?.causeError?.code || err?.code;
-      if (pgCode !== '42P01') {
-        throw err;
-      }
-      return [];
+      console.warn('Neon articles query in sitemap fallback to local/cached:', err?.message || err);
     }
   }
 
   const localArticlesRaw = readJsonFileStrict<Article[]>(articlesPaths, 'articles');
   if (localArticlesRaw !== null && !Array.isArray(localArticlesRaw)) {
-    throw new SitemapDatabaseError('Невалідна структура списку статей у сховищі');
+    return [];
   }
   return localArticlesRaw || [];
 }
@@ -345,10 +340,7 @@ export async function fetchSitemapSourceData(): Promise<SitemapSourceData> {
         }
       }
     } catch (err: any) {
-      const pgCode = err?.causeError?.code || err?.code;
-      if (pgCode !== '42P01') {
-        throw err;
-      }
+      console.warn('Neon site_settings query in sitemap fallback to defaults:', err?.message || err);
     }
 
     return {
@@ -705,11 +697,34 @@ export function createSitemapHandler(options?: SitemapHandlerOptions) {
 
       return res.status(200).send(xmlToSend);
     } catch (err: any) {
-      console.error('Sitemap generation error (DB/storage unavailable):', err);
-      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-      res.setHeader('Retry-After', '120');
-      return res.status(503).send('Service Unavailable: unable to load authoritative data for sitemap');
+      console.warn('Sitemap generation error, falling back to cached or core XML:', err);
+      const cached = getCachedSitemap();
+      if (cached && cached.rootXml) {
+        res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+        res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=60');
+        if (req.method === 'HEAD') return res.status(200).end();
+        return res.status(200).send(cached.rootXml);
+      }
+
+      // Резервний валідний XML з основними сторінками видання (гарантує 200 OK для Google Search Console)
+      const fallbackXml = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+        `  <url><loc>${SITE_DOMAIN}/</loc></url>`,
+        `  <url><loc>${SITE_DOMAIN}/news</loc></url>`,
+        `  <url><loc>${SITE_DOMAIN}/articles</loc></url>`,
+        `  <url><loc>${SITE_DOMAIN}/reviews</loc></url>`,
+        `  <url><loc>${SITE_DOMAIN}/popular</loc></url>`,
+        `  <url><loc>${SITE_DOMAIN}/about</loc></url>`,
+        `  <url><loc>${SITE_DOMAIN}/contacts</loc></url>`,
+        '</urlset>',
+        '',
+      ].join('\n');
+
+      res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+      res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=60');
+      if (req.method === 'HEAD') return res.status(200).end();
+      return res.status(200).send(fallbackXml);
     }
   };
 }

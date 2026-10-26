@@ -3,10 +3,12 @@ import path from 'path';
 import { initResponseHelpers } from './_helpers.ts';
 import { BUILT_HTML_SHELL } from './_built_shell.ts';
 import articleImageHandler from './_article_image.ts';
-import {
+import robotsHandler from './robots.ts';
+import sitemapHandler, {
   fetchSitemapSourceData,
   SitemapDatabaseError,
 } from './sitemap.ts';
+import newsSitemapHandler from './news-sitemap.ts';
 import {
   getCachedPublicRenderData,
   setCachedPublicRenderData,
@@ -1269,6 +1271,35 @@ export default async function handler(req: any, res: any) {
     /[?&]__asset=cover\b/.test(rawReqUrl)
   ) {
     return articleImageHandler(req, res);
+  }
+
+  // Захист від випадкового потрапляння robots.txt до HTML-рендерера
+  if (
+    /^\/robots\.txt\b/i.test(rawReqUrl) ||
+    req?.query?.pathname === '/robots.txt' ||
+    req?.query?.pathname === 'robots.txt'
+  ) {
+    return robotsHandler(req, res);
+  }
+
+  // Захист від випадкового потрапляння sitemap.xml до HTML-рендерера
+  if (
+    /^\/sitemap(?:-[^/]+)?\.xml\b/i.test(rawReqUrl) ||
+    req?.query?.pathname === '/sitemap.xml' ||
+    req?.query?.pathname === 'sitemap.xml' ||
+    typeof req?.query?.part === 'string'
+  ) {
+    return sitemapHandler(req, res);
+  }
+
+  // Захист від випадкового потрапляння news-sitemap.xml до HTML-рендерера
+  if (
+    /^\/news-sitemap(?:-[^/]+)?\.xml\b/i.test(rawReqUrl) ||
+    req?.query?.pathname === '/news-sitemap.xml' ||
+    req?.query?.pathname === 'news-sitemap.xml' ||
+    typeof req?.query?.lang === 'string'
+  ) {
+    return newsSitemapHandler(req, res);
   }
 
   initResponseHelpers(res);

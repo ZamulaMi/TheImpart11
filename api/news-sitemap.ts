@@ -410,13 +410,15 @@ export function createNewsSitemapHandler(options?: NewsSitemapHandlerOptions) {
 
       return res.status(200).send(xmlToSend);
     } catch (err: any) {
-      console.error('News sitemap generation error (DB/storage unavailable):', err);
-      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-      res.setHeader('Retry-After', '120');
-      return res
-        .status(503)
-        .send('Service Unavailable: unable to load authoritative news articles');
+      console.warn('News sitemap generation error, falling back to cached or empty news XML:', err);
+      const cached = getCachedNewsSitemap(cacheKey)?.xml;
+      const xmlFallback = cached || renderNewsSitemapXml([]);
+      res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+      res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=30, stale-while-revalidate=30');
+      if (req.method === 'HEAD') {
+        return res.status(200).end();
+      }
+      return res.status(200).send(xmlFallback);
     }
   };
 }
